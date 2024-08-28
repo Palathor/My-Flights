@@ -1,0 +1,66 @@
+#my airports map
+import numpy as np
+import pandas as pd
+import matplotlib as plt
+import plotly.graph_objects as go
+
+
+my_airports = pd.read_csv('/Users/wouterboon/Desktop/My Airports.csv')
+all_airports = pd.read_csv('/Users/wouterboon/Desktop/all_airports.csv')
+
+#print(my_airports.head())
+#print(all_airports.head())
+
+origin_list = my_airports.merge(all_airports, left_on='Origin',right_on='icao',how='left')
+destination_list = my_airports.merge(all_airports, left_on='Destination',right_on='icao',how='left')
+#print(origin_list.head())
+#print(destination_list.head())
+complete_list = origin_list.merge(destination_list,on='Origin',how='right')
+complete_list.drop(['country_code_x','region_name_x','region_name_x','iata_x','country_code_y','region_name_y','region_name_y','iata_y'], axis=1, inplace=True)
+print(complete_list.head(15))
+
+# Code from Plotly
+fig = go.Figure()
+
+fig.add_trace(go.Scattergeo(
+    locationmode = 'USA-states',
+    lon = all_airports['longitude'],
+    lat = all_airports['latitude'],
+    hoverinfo = 'text',
+    text = all_airports['airport'],
+    mode = 'markers',
+    marker = dict(
+        size = 2,
+        color = 'rgb(255, 0, 0)',
+        line = dict(
+            width = 3,
+            color = 'rgba(68, 68, 68, 0)'
+        )
+    )))
+
+flight_paths = []
+for i in range(len(complete_list)):
+    fig.add_trace(
+        go.Scattergeo(
+            locationmode = 'USA-states',
+            lon = [complete_list['longitude_x'][i], complete_list['longitude_y'][i]],
+            lat = [complete_list['latitude_x'][i], complete_list['latitude_y'][i]],
+            mode = 'lines',
+            line = dict(width = 1,color = 'red'),
+            
+        )
+    )
+
+fig.update_layout(
+    title_text = 'My Learjet Flights<br>(Hover for airport names)',
+    showlegend = False,
+    geo = dict(
+        scope = 'europe',
+        projection_type = 'azimuthal equal area',
+        showland = True,
+        landcolor = 'rgb(243, 243, 243)',
+        countrycolor = 'rgb(204, 204, 204)',
+    ),
+)
+
+fig.show()
